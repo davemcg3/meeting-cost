@@ -1,0 +1,224 @@
+# Project Structure
+This is a full-stack application with:
+- **Backend**: Go API in `backend/` directory
+- **Frontend**: React application in `frontend/` directory
+- **Infrastructure**: Docker and AWS deployment configs in `infrastructure/` directory
+- **dave**: This is a folder that will be ignored by git (it's in my global gitignore file), use it to review instructions I've left for you and leave responses for me in a new file each time. File names should be formatted with an incremented number, and then a hyphenated brief description in all lowercase, and terminate with a .md extension. These are markdown files, and you should use GitHub's markdown formatting in them.
+
+## Go Backend Best Practices
+
+### Code Style
+- Follow Go standard formatting (`gofmt`/`goimports`)
+- Use `golangci-lint` for linting
+- Follow effective Go guidelines: https://go.dev/doc/effective_go
+- Use meaningful variable names, avoid abbreviations unless widely understood
+- Keep functions small and focused (single responsibility)
+- Prefer composition over inheritance
+
+### Project Structure
+- Organize by feature/domain when possible
+- Use `internal/` for private application code
+- Use `pkg/` for reusable packages
+- Keep `cmd/` for main application entry points
+- Use `api/` or `handlers/` for HTTP handlers
+- Use `service/` or `domain/` for business logic
+- Use `repository/` or `store/` for data access
+- Use `models/` or `entities/` for data structures
+
+### Error Handling
+- Always handle errors explicitly, never ignore them
+- Use `fmt.Errorf` with `%w` verb for error wrapping
+- Create custom error types for domain-specific errors
+- Return errors, don't log and continue silently
+- Use `errors.Is()` and `errors.As()` for error checking
+
+### API Design
+- Use RESTful conventions for HTTP APIs
+- Return appropriate HTTP status codes
+- Use structured JSON responses with consistent format
+- Implement proper request validation
+- Use context.Context for request-scoped values and cancellation
+- Set timeouts for external calls
+- Use middleware for cross-cutting concerns (logging, auth, CORS)
+
+### Testing
+- Write unit tests for business logic
+- Use table-driven tests when appropriate
+- Mock external dependencies in tests
+- Aim for high test coverage on critical paths
+- Use `testify` or similar for assertions
+- Test error cases, not just happy paths
+
+### Dependencies
+- Use Go modules for dependency management
+- Keep dependencies up to date
+- Prefer standard library when possible
+- Document why external dependencies are needed
+- Use `go mod tidy` regularly
+
+### Performance
+- Use `sync.Pool` for frequently allocated objects
+- Avoid premature optimization
+- Profile before optimizing
+- Use `context.Context` for cancellation and timeouts
+- Consider connection pooling for databases
+
+## React Frontend Best Practices
+
+### Code Style
+- Use functional components with hooks
+- Follow React best practices and hooks rules
+- Use TypeScript for type safety (if applicable)
+- Use ESLint and Prettier for code formatting
+- Keep components small and focused
+- Extract reusable logic into custom hooks
+
+### Project Structure
+- Organize by feature/domain when possible
+- Use `components/` for reusable UI components
+- Use `pages/` or `views/` for route components
+- Use `hooks/` for custom React hooks
+- Use `utils/` or `lib/` for utility functions
+- Use `services/` or `api/` for API calls
+- Use `context/` or `store/` for state management
+- Use `types/` or `interfaces/` for TypeScript types
+
+### State Management
+- Use local state for component-specific data
+- Use Context API for shared state across components
+- Consider Redux/Zustand for complex global state
+- Avoid prop drilling - use context or state management
+- Keep state as close to where it's used as possible
+
+### API Integration
+- Use a centralized API client (axios, fetch wrapper)
+- Handle loading and error states
+- Use React Query or SWR for server state management
+- Implement proper error handling and user feedback
+- Use environment variables for API endpoints
+
+### Performance
+- Use `React.memo()` for expensive components
+- Use `useMemo()` and `useCallback()` appropriately
+- Code split with `React.lazy()` and `Suspense`
+- Optimize images and assets
+- Avoid unnecessary re-renders
+
+### Accessibility
+- Use semantic HTML elements
+- Provide proper ARIA labels
+- Ensure keyboard navigation works
+- Maintain proper focus management
+- Test with screen readers
+
+### Testing
+- Write unit tests for components and hooks
+- Use React Testing Library for component tests
+- Test user interactions, not implementation details
+- Mock API calls in tests
+- Aim for good coverage on critical user flows
+
+## Docker Best Practices
+
+### Dockerfile
+- Use multi-stage builds to reduce image size
+- Use specific version tags, not `latest`
+- Order Dockerfile commands from least to most frequently changing
+- Use `.dockerignore` to exclude unnecessary files
+- Run as non-root user when possible
+- Use health checks for services
+- Minimize layers and combine RUN commands when appropriate
+
+### Docker Compose
+- Use environment variables for configuration
+- Define health checks for services
+- Use named volumes for persistent data
+- Set appropriate resource limits
+- Use networks for service isolation
+- Keep `docker-compose.override.yml` in `.gitignore` for local overrides
+
+### Security
+- Scan images for vulnerabilities
+- Keep base images updated
+- Don't store secrets in images or compose files
+- Use secrets management (Docker secrets, env files, etc.)
+- Run containers with least privilege
+
+## AWS Best Practices
+
+### Infrastructure as Code
+- Use Terraform or AWS CDK for infrastructure
+- Keep infrastructure code version controlled
+- Use modules/constructs for reusable patterns
+- Document infrastructure decisions
+- Use environment-specific configurations
+- Never commit secrets or credentials
+
+### Security
+- Use IAM roles, not access keys when possible
+- Follow principle of least privilege
+- Use AWS Secrets Manager or Parameter Store for secrets
+- Enable CloudTrail for audit logging
+- Use VPCs and security groups appropriately
+- Encrypt data at rest and in transit
+
+### Cost Optimization
+- Use appropriate instance types
+- Implement auto-scaling
+- Use reserved instances for predictable workloads
+- Clean up unused resources
+- Monitor costs with AWS Cost Explorer
+- Use S3 lifecycle policies
+
+### Deployment
+- Use CI/CD pipelines (GitHub Actions, AWS CodePipeline, etc.)
+- Implement blue/green or canary deployments
+- Use infrastructure staging environments
+- Automate deployments, don't deploy manually
+- Have rollback procedures in place
+
+### Monitoring
+- Set up CloudWatch alarms
+- Use structured logging
+- Implement distributed tracing
+- Monitor application and infrastructure metrics
+- Set up alerting for critical issues
+
+## General Best Practices
+
+### Environment Variables
+- Never commit `.env` files or secrets
+- Use `.env.example` as a template
+- Document all required environment variables
+- Use different values per environment
+- Validate environment variables at startup
+
+### Git Workflow
+- Write clear, descriptive commit messages
+- Use feature branches for development
+- Keep commits focused and atomic
+- Review code before merging
+- Use meaningful branch names
+
+### Documentation
+- Keep README files up to date
+- Document API endpoints
+- Document environment setup
+- Document deployment procedures
+- Comment complex logic, not obvious code
+
+### Security
+- Keep dependencies updated
+- Scan for vulnerabilities regularly
+- Use HTTPS everywhere
+- Validate and sanitize all inputs
+- Implement proper authentication and authorization
+- Follow OWASP security guidelines
+
+### Performance
+- Profile before optimizing
+- Monitor performance in production
+- Set up performance budgets
+- Use caching appropriately
+- Optimize database queries
+- Implement proper pagination
