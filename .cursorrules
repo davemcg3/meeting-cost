@@ -1,9 +1,14 @@
-# Project Structure
-This is a full-stack application with:
-- **Backend**: Go API in `backend/` directory
-- **Frontend**: React application in `frontend/` directory
-- **Infrastructure**: Docker and AWS deployment configs in `infrastructure/` directory
-- **dave**: This is a folder that will be ignored by git (it's in my global gitignore file), use it to review instructions I've left for you and leave responses for me in a new file each time. File names should be formatted with an incremented number, and then a hyphenated brief description in all lowercase, and terminate with a .md extension. These are markdown files, and you should use GitHub's markdown formatting in them.
+# Meeting Cost Calculator - Cursor Rules
+
+## Project Structure
+
+This is a full-stack meeting cost calculator application with:
+- **Backend**: Go API in `backend/go/` directory using Fiber framework and GORM ORM
+- **Frontend**: React application in `frontend/react/` directory
+- **Infrastructure**: Docker (local) and AWS (production) in `infrastructure/` directory
+- **Database**: PostgreSQL with GORM
+- **Cache**: Valkey/Redis
+- **Documentation**: Comprehensive docs in `docs/` directory
 
 ## Go Backend Best Practices
 
@@ -14,40 +19,73 @@ This is a full-stack application with:
 - Use meaningful variable names, avoid abbreviations unless widely understood
 - Keep functions small and focused (single responsibility)
 - Prefer composition over inheritance
+- Use `context.Context` for request-scoped values and cancellation
 
 ### Project Structure
 - Organize by feature/domain when possible
 - Use `internal/` for private application code
-- Use `pkg/` for reusable packages
+- Use `pkg/` for reusable packages (if any)
 - Keep `cmd/` for main application entry points
 - Use `api/` or `handlers/` for HTTP handlers
-- Use `service/` or `domain/` for business logic
+- Use `service/` for business logic
 - Use `repository/` or `store/` for data access
-- Use `models/` or `entities/` for data structures
+- Use `models/` for GORM data models
+- Use `middleware/` for HTTP middleware
+- Use `config/` for configuration
+- Use `cache/` for cache abstractions
+- Use `errors/` for error definitions
 
 ### Error Handling
 - Always handle errors explicitly, never ignore them
 - Use `fmt.Errorf` with `%w` verb for error wrapping
-- Create custom error types for domain-specific errors
+- Create custom error types for domain-specific errors (see `internal/errors/`)
 - Return errors, don't log and continue silently
 - Use `errors.Is()` and `errors.As()` for error checking
+- Follow error handling patterns from `docs/implementation-planning/03-backend-patterns.md`
 
 ### API Design
 - Use RESTful conventions for HTTP APIs
 - Return appropriate HTTP status codes
-- Use structured JSON responses with consistent format
+- Use structured JSON responses with consistent format (see `docs/implementation-planning/02-backend-contracts.md`)
 - Implement proper request validation
 - Use context.Context for request-scoped values and cancellation
 - Set timeouts for external calls
-- Use middleware for cross-cutting concerns (logging, auth, CORS)
+- Use middleware for cross-cutting concerns (logging, auth, CORS, cookie consent)
+
+### Database (GORM)
+- Use GORM models as defined in `docs/implementation-planning/01-data-models.md`
+- All models must include `CreatedAt`, `UpdatedAt`, and `DeletedAt` (soft deletes)
+- Use UUIDs for primary keys: `uuid.UUID` with `gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
+- Use transactions for operations requiring atomicity
+- Implement repository pattern (see `docs/implementation-planning/02-backend-contracts.md`)
+- Use cache-aside pattern for frequently accessed data
+- Never store sensitive data (card numbers, passwords) - use hashes/tokens
+
+### Service Layer
+- All business logic must be in the service layer, not in handlers or repositories
+- Services orchestrate repository calls and implement business rules
+- Use dependency injection (see container pattern in `docs/implementation-planning/03-backend-patterns.md`)
+- Check permissions before operations
+- Use transactions for complex operations
+- Follow service layer patterns from `docs/implementation-planning/03-backend-patterns.md`
+
+### Authentication & Authorization
+- Use JWT tokens for session management
+- Support OAuth2 for external providers (Zoom, Google, Teams, Slack)
+- Implement permission checking via repository (see `PermissionRepository`)
+- Use middleware for authentication and authorization
+- Never log sensitive authentication data
+- Implement cookie consent enforcement middleware
 
 ### Testing
 - Write unit tests for business logic
 - Use table-driven tests when appropriate
 - Mock external dependencies in tests
 - Aim for high test coverage on critical paths
-- Use `testify` or similar for assertions
+- Use `testify` for assertions
 - Test error cases, not just happy paths
+- Integration tests for API endpoints
+- Test files should be in same package with `_test.go` suffix
 
 ### Dependencies
 - Use Go modules for dependency management
@@ -62,13 +100,23 @@ This is a full-stack application with:
 - Profile before optimizing
 - Use `context.Context` for cancellation and timeouts
 - Consider connection pooling for databases
+- Cache frequently accessed data in Valkey/Redis
+
+### Security
+- Never commit secrets or credentials
+- Use environment variables for configuration
+- Encrypt sensitive data at rest and in transit
+- Implement proper input validation
+- Use parameterized queries (GORM handles this)
+- Implement rate limiting for sensitive endpoints
+- Follow security patterns from `docs/implementation-planning/05-pci-compliance-roadmap.md` and `docs/implementation-planning/06-soc2-compliance-roadmap.md`
 
 ## React Frontend Best Practices
 
 ### Code Style
 - Use functional components with hooks
 - Follow React best practices and hooks rules
-- Use TypeScript for type safety (if applicable)
+- Use TypeScript for type safety
 - Use ESLint and Prettier for code formatting
 - Keep components small and focused
 - Extract reusable logic into custom hooks
@@ -80,22 +128,24 @@ This is a full-stack application with:
 - Use `hooks/` for custom React hooks
 - Use `utils/` or `lib/` for utility functions
 - Use `services/` or `api/` for API calls
-- Use `context/` or `store/` for state management
+- Use `context/` for React context providers
 - Use `types/` or `interfaces/` for TypeScript types
+- Use `routes/` for routing configuration
 
 ### State Management
 - Use local state for component-specific data
 - Use Context API for shared state across components
-- Consider Redux/Zustand for complex global state
+- Consider Redux Toolkit for complex global state (if needed)
 - Avoid prop drilling - use context or state management
 - Keep state as close to where it's used as possible
 
 ### API Integration
-- Use a centralized API client (axios, fetch wrapper)
+- Use centralized API client (see `services/api/client.ts`)
 - Handle loading and error states
-- Use React Query or SWR for server state management
+- Use React Query or SWR for server state management (if implemented)
 - Implement proper error handling and user feedback
 - Use environment variables for API endpoints
+- Never store sensitive data in frontend
 
 ### Performance
 - Use `React.memo()` for expensive components
@@ -104,12 +154,21 @@ This is a full-stack application with:
 - Optimize images and assets
 - Avoid unnecessary re-renders
 
-### Accessibility
+### Accessibility (ADA Compliance)
 - Use semantic HTML elements
 - Provide proper ARIA labels
 - Ensure keyboard navigation works
 - Maintain proper focus management
 - Test with screen readers
+- Follow WCAG 2.1 AA standards
+- See `docs/implementation-planning/04-implementation-phases.md` Phase 6.6 for details
+
+### Cookie Consent
+- Implement cookie consent banner (see Phase 6.2 in implementation plan)
+- Respect user consent preferences
+- Only set cookies based on consent
+- Use cookie management utilities
+- Integrate with backend consent service
 
 ### Testing
 - Write unit tests for components and hooks
@@ -117,108 +176,251 @@ This is a full-stack application with:
 - Test user interactions, not implementation details
 - Mock API calls in tests
 - Aim for good coverage on critical user flows
+- Use Jest for unit testing
+- Use Playwright for system/e2e testing
 
-## Docker Best Practices
+## Architecture Patterns
 
-### Dockerfile
-- Use multi-stage builds to reduce image size
-- Use specific version tags, not `latest`
-- Order Dockerfile commands from least to most frequently changing
-- Use `.dockerignore` to exclude unnecessary files
-- Run as non-root user when possible
-- Use health checks for services
-- Minimize layers and combine RUN commands when appropriate
+### Backend Architecture
+- Follow layered architecture: Handlers -> Services -> Repositories -> Models
+- Use dependency injection container (see `docs/implementation-planning/03-backend-patterns.md`)
+- Implement repository pattern with caching
+- Use service layer for all business logic
+- Follow error handling patterns
+- Use decorator pattern for cross-cutting concerns
+- Implement immutability patterns where appropriate
 
-### Docker Compose
-- Use environment variables for configuration
-- Define health checks for services
-- Use named volumes for persistent data
-- Set appropriate resource limits
-- Use networks for service isolation
-- Keep `docker-compose.override.yml` in `.gitignore` for local overrides
+### Frontend Architecture
+- Use component-based architecture
+- Implement proper separation of concerns
+- Use custom hooks for reusable logic
+- Centralize API client configuration
+- Implement proper error boundaries
 
-### Security
-- Scan images for vulnerabilities
-- Keep base images updated
-- Don't store secrets in images or compose files
-- Use secrets management (Docker secrets, env files, etc.)
-- Run containers with least privilege
+## Database Patterns
 
-## AWS Best Practices
+- Use GORM models as defined in `docs/implementation-planning/01-data-models.md`
+- All models use soft deletes (`DeletedAt`)
+- Use UUIDs for all primary keys
+- Implement proper indexes (see data models document)
+- Use transactions for atomic operations
+- Cache frequently accessed data
 
-### Infrastructure as Code
-- Use Terraform or AWS CDK for infrastructure
-- Keep infrastructure code version controlled
-- Use modules/constructs for reusable patterns
-- Document infrastructure decisions
-- Use environment-specific configurations
-- Never commit secrets or credentials
+## Security Best Practices
 
-### Security
-- Use IAM roles, not access keys when possible
-- Follow principle of least privilege
-- Use AWS Secrets Manager or Parameter Store for secrets
-- Enable CloudTrail for audit logging
-- Use VPCs and security groups appropriately
-- Encrypt data at rest and in transit
+### General
+- Never commit secrets, credentials, or API keys
+- Use environment variables for all configuration
+- Validate all user input
+- Use parameterized queries (GORM handles this)
+- Implement proper authentication and authorization
+- Log security events
+- Follow GDPR/CCPA requirements (cookie consent, data anonymization)
 
-### Cost Optimization
-- Use appropriate instance types
-- Implement auto-scaling
-- Use reserved instances for predictable workloads
-- Clean up unused resources
-- Monitor costs with AWS Cost Explorer
-- Use S3 lifecycle policies
+### Backend
+- Encrypt sensitive data at rest and in transit
+- Use HTTPS/TLS for all connections
+- Implement rate limiting
+- Use secure session management
+- Implement cookie consent enforcement
+- Follow PCI DSS and SOC 2 guidelines (see compliance roadmaps)
 
-### Deployment
-- Use CI/CD pipelines (GitHub Actions, AWS CodePipeline, etc.)
-- Implement blue/green or canary deployments
-- Use infrastructure staging environments
-- Automate deployments, don't deploy manually
-- Have rollback procedures in place
+### Frontend
+- Never store sensitive data in localStorage
+- Use secure cookie settings
+- Implement CSRF protection
+- Sanitize user input
+- Use Content Security Policy (CSP)
 
-### Monitoring
-- Set up CloudWatch alarms
-- Use structured logging
-- Implement distributed tracing
-- Monitor application and infrastructure metrics
-- Set up alerting for critical issues
+## Testing Requirements
 
-## General Best Practices
+### Backend
+- Unit tests for all business logic
+- Integration tests for API endpoints
+- Test error handling
+- Test authentication and authorization
+- Use table-driven tests where appropriate
 
-### Environment Variables
-- Never commit `.env` files or secrets
-- Use `.env.example` as a template
+### Frontend
+- Unit tests for components and hooks
+- Integration tests for user flows
+- Accessibility testing (axe-core)
+- E2E tests with Playwright
+- Test with screen readers
+
+## Documentation
+
+- Document all public APIs
+- Document complex business logic
+- Keep README files up to date
+- Document environment variables
+- Document deployment procedures
+- Follow documentation in `docs/` directory
+
+## Implementation Plan Reference
+
+When implementing features, refer to:
+- `docs/implementation-planning/01-data-models.md` for data models
+- `docs/implementation-planning/02-backend-contracts.md` for API contracts
+- `docs/implementation-planning/03-backend-patterns.md` for architectural patterns
+- `docs/implementation-planning/04-implementation-phases.md` for detailed implementation tickets
+
+## Code Review Guidelines
+
+- All code must be reviewed before merging
+- Check for security vulnerabilities
+- Verify error handling
+- Check test coverage
+- Verify accessibility compliance
+- Check performance implications
+- Verify compliance with these rules
+
+## Common Patterns
+
+### Go Service Method Pattern
+```go
+func (s *service) Method(ctx context.Context, ...) (*DTO, error) {
+    // 1. Authorization check
+    // 2. Business validation
+    // 3. Business logic
+    // 4. Repository call
+    // 5. Cache invalidation
+    // 6. Event publishing (if needed)
+    // 7. Return DTO
+}
+```
+
+### React Component Pattern
+```tsx
+interface ComponentProps {
+    // Props definition
+}
+
+export const Component: React.FC<ComponentProps> = ({ ...props }) => {
+    // Hooks
+    // State
+    // Effects
+    // Handlers
+    // Render
+}
+```
+
+## File Naming Conventions
+
+### Go
+- Files: `snake_case.go` or descriptive names
+- Packages: lowercase, single word
+- Types: `PascalCase`
+- Functions: `PascalCase` for exported, `camelCase` for unexported
+- Constants: `PascalCase` for exported, `camelCase` for unexported
+
+### React/TypeScript
+- Components: `PascalCase.tsx`
+- Hooks: `useCamelCase.ts`
+- Utilities: `camelCase.ts`
+- Types: `camelCase.ts` or `types.ts`
+- Constants: `UPPER_SNAKE_CASE` or `camelCase`
+
+## Environment Variables
+
+- Never commit `.env` files
+- Use `.env.example` as template
 - Document all required environment variables
-- Use different values per environment
 - Validate environment variables at startup
+- Use different values per environment
 
-### Git Workflow
+## Git Workflow
+
+### Branching Strategy
+
+- Create a new branch for each phase in the implementation plan
+- Branch naming: `phase-{number}-{description}` (e.g., `phase-1-foundation`, `phase-2-backend-infrastructure`)
+- All work for a phase should be done on that phase's branch
+- Never commit directly to `main` branch
+
+### Commit Workflow
+
+When completing a task:
+1. **Commit changes** using the 50/72 rule:
+   - Subject line: Maximum 50 characters, imperative mood
+   - Blank line
+   - Body: Wrap at 72 characters, explain what and why
+   - Example:
+     ```
+     Implement PersonRepository with GORM
+
+     Add PersonRepository implementation following repository
+     pattern with cache-aside strategy. Includes all CRUD
+     operations, soft delete support, and pagination.
+     ```
+
+2. **Push to origin**: Always push commits to the remote branch
+   ```bash
+   git push origin phase-{number}-{description}
+   ```
+
+3. **Create Pull Request**: If a PR for the branch against `main` doesn't already exist, open a new PR
+   - PR title should match the phase name
+   - PR description should reference the phase and tickets being completed
+   - Link to relevant implementation plan tickets
+
+### Commit Message Guidelines
+
+- **Subject line** (50 chars max):
+  - Use imperative mood ("Add feature" not "Added feature")
+  - Capitalize first letter
+  - No period at end
+  - Reference ticket number if applicable: "Ticket 1.2.1: Implement Person model"
+
+- **Body** (72 chars per line):
+  - Explain what changed and why
+  - Reference related issues/tickets
+  - Break into paragraphs if needed
+  - Use bullet points for multiple changes
+
+- **Examples**:
+  ```
+  Ticket 2.2.1: Implement PersonRepository
+
+  Add PersonRepository with GORM implementation following
+  repository pattern. Includes cache-aside strategy for
+  performance and soft delete support for GDPR compliance.
+
+  - Implement all CRUD operations
+  - Add pagination and filtering support
+  - Integrate with cache layer
+  - Add comprehensive unit tests
+  ```
+
+### General Git Practices
+
 - Write clear, descriptive commit messages
-- Use feature branches for development
-- Keep commits focused and atomic
+- Keep commits focused and atomic (one logical change per commit)
 - Review code before merging
 - Use meaningful branch names
+- Never force push to shared branches
 
-### Documentation
-- Keep README files up to date
-- Document API endpoints
-- Document environment setup
-- Document deployment procedures
-- Comment complex logic, not obvious code
+## Performance Considerations
 
-### Security
-- Keep dependencies updated
-- Scan for vulnerabilities regularly
-- Use HTTPS everywhere
-- Validate and sanitize all inputs
-- Implement proper authentication and authorization
-- Follow OWASP security guidelines
-
-### Performance
 - Profile before optimizing
 - Monitor performance in production
 - Set up performance budgets
 - Use caching appropriately
 - Optimize database queries
 - Implement proper pagination
+
+## Compliance
+
+- Follow GDPR/CCPA requirements (cookie consent, data anonymization)
+- Implement PCI DSS requirements if processing payments (see `docs/implementation-planning/05-pci-compliance-roadmap.md`)
+- Follow SOC 2 requirements for enterprise customers (see `docs/implementation-planning/06-soc2-compliance-roadmap.md`)
+- Maintain audit logs for compliance
+
+## When in Doubt
+
+1. Check the implementation planning documents in `docs/implementation-planning/`
+2. Follow Go and React official best practices
+3. Prioritize security and accessibility
+4. Write tests
+5. Document complex logic
+6. Ask for code review
