@@ -9,6 +9,7 @@ This is a full-stack meeting cost calculator application with:
 - **Database**: PostgreSQL with GORM
 - **Cache**: Valkey/Redis
 - **Documentation**: Comprehensive docs in `docs/` directory
+- **dave**: This is a folder that will be ignored by git (it's in my global gitignore file), use it to review instructions I've left for you and leave responses for me in a new file each time. File names should be formatted with an incremented number, and then a hyphenated brief description in all lowercase, and terminate with a .md extension. These are markdown files, and you should use GitHub's markdown formatting in them.
 
 ## Go Backend Best Practices
 
