@@ -1,0 +1,101 @@
+# Local development: run Go backend, PostgreSQL, and Valkey in containers.
+# From repo root: docker compose -f infrastructure/docker/docker-compose.yml up --build
+name: meeting-cost
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-meetingcost}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-meetingcost}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  valkey:
+    image: valkey/valkey:7-alpine
+    ports:
+      - "${CACHE_PORT:-6379}:6379"
+    healthcheck:
+      test: [ "CMD", "valkey-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  backend:
+    build:
+      context: ../../backend/go
+      dockerfile: Dockerfile
+    ports:
+      - "${PORT:-8080}:8080"
+    environment:
+      ENV: development
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_NAME: ${DB_NAME:-meetingcost}
+      DB_SSLMODE: disable
+      CACHE_ADDR: valkey:6379
+      PORT: 8080
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+    # Default: run API. Run migrations with:
+    #   docker compose -f infrastructure/docker/docker-compose.yml run --rm backend /bin/migrate up
+    command: [ "/bin/api" ]
+
+  frontend:
+    build:
+      context: ../../frontend/react
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:${PORT:-8080}/api/v1
+        VITE_WS_URL: localhost:${PORT:-8080}
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+  # ── Dev Tools ──────────────────────────────────────────────────────────────
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@local.dev}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+      PGADMIN_SERVER_JSON_FILE: /pgadmin4/servers.json
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./pgadmin/servers.json:/pgadmin4/servers.json:ro
+      - ./pgadmin/pgpass:/pgpass:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    environment:
+      REDIS_HOSTS: "valkey:valkey:6379"
+    ports:
+      - "8082:8081"
+    depends_on:
+      valkey:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  pgadmin_data:

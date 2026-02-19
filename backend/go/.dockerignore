@@ -1,0 +1,22 @@
+# Build output and tools
+/bin
+/dist
+*.exe
+*.test
+coverage.*
+
+# Git and IDE
+.git
+.gitignore
+.idea
+.vscode
+
+# Environment (use docker-compose env or secrets)
+.env
+.env.*
+!.env.example
+
+# Docs and misc
+README.md
+*.md
+
