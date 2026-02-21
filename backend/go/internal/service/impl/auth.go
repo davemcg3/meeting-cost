@@ -16,6 +16,16 @@ import (
 	"github.com/yourorg/meeting-cost/backend/go/internal/service"
 )
 
+/*
+Because you've used a struct for tokenmanager in jwt.go
+tokenmanager not testable
+DI inside of go
+accept interface return struct
+refactor
+have ai look at the rest of them for consistency
+
+[claude.md](http://claude.md/) accept interfaces return structs
+*/
 type authService struct {
 	personRepo      repository.PersonRepository
 	authRepo        repository.AuthRepository
@@ -103,7 +113,7 @@ func (s *authService) Register(ctx context.Context, req service.RegisterRequest)
 	})
 
 	return &service.RegisterResponse{
-		Person:      person,
+		User:        person,
 		AccessToken: tokens.AccessToken,
 		ExpiresIn:   int(tokens.ExpiresIn),
 	}, nil
@@ -167,7 +177,7 @@ func (s *authService) Login(ctx context.Context, req service.LoginRequest) (*ser
 	})
 
 	return &service.LoginResponse{
-		Person:       person,
+		User:         person,
 		AccessToken:  tokens.AccessToken,
 		RefreshToken: tokens.RefreshToken,
 		ExpiresIn:    int(tokens.ExpiresIn),

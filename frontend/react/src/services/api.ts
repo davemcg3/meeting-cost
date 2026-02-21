@@ -26,8 +26,9 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Check if it's a 401 and not already a retry
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Check if it's a 401 and not already a retry, and not on login/register routes
+    const isAuthRoute = originalRequest.url?.includes('/auth/login') || originalRequest.url?.includes('/auth/register');
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthRoute) {
       originalRequest._retry = true;
 
       try {

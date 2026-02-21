@@ -34,8 +34,8 @@ const RegisterPage: React.FC = () => {
       await api.post('/auth/register', {
         email: formData.email,
         password: formData.password,
-        first_name: formData.firstName,
-        last_name: formData.lastName,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
       });
 
       // Sync cookie consent session (the backend will tie it to the person once they login)

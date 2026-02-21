@@ -1,6 +1,6 @@
 # Local development: run Go backend, PostgreSQL, and Valkey in containers.
 # From repo root: docker compose -f infrastructure/docker/docker-compose.yml up --build
-name: meeting-cost
+name: meetingcost
 
 services:
   postgres:

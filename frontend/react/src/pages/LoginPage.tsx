@@ -20,7 +20,11 @@ const LoginPage: React.FC = () => {
 
     try {
       const response = await api.post('/auth/login', { email, password });
+
       const { user, access_token, refresh_token } = response.data;
+      if (!user || !access_token || !refresh_token) {
+        throw new Error('Invalid response format from server');
+      }
 
       setAuth(user, access_token, refresh_token);
 
@@ -31,7 +35,9 @@ const LoginPage: React.FC = () => {
 
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Invalid email or password');
+      console.error("Login caught error:", err);
+      const errorMessage = err.response?.data?.error || err.message || 'Invalid email or password';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

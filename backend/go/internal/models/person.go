@@ -9,15 +9,15 @@ import (
 
 // Person represents a user/person in the system. Can belong to multiple organizations.
 type Person struct {
-	ID        uuid.UUID      `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ID        uuid.UUID      `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 
 	// Identity fields
 	Email     string `gorm:"uniqueIndex:idx_person_email;not null" json:"email"`
-	FirstName string `gorm:"not null" json:"first_name"`
-	LastName  string `json:"last_name"`
+	FirstName string `gorm:"not null" json:"firstName"`
+	LastName  string `json:"lastName"`
 
 	// GDPR compliance
 	AnonymizedAt *time.Time `json:"anonymized_at,omitempty"` // Set when person requests data deletion

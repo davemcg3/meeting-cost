@@ -39,14 +39,14 @@ type AuthService interface {
 type RegisterRequest struct {
 	Email     string `json:"email" validate:"required,email"`
 	Password  string `json:"password" validate:"required,min=8"`
-	FirstName string `json:"first_name" validate:"required"`
-	LastName  string `json:"last_name"`
+	FirstName string `json:"firstName" validate:"required"`
+	LastName  string `json:"lastName"`
 	IPAddress string `json:"-"`
 	UserAgent string `json:"-"`
 }
 
 type RegisterResponse struct {
-	Person      *models.Person `json:"person"`
+	User        *models.Person `json:"user"`
 	AccessToken string         `json:"access_token"`
 	ExpiresIn   int            `json:"expires_in"`
 }
@@ -59,7 +59,7 @@ type LoginRequest struct {
 }
 
 type LoginResponse struct {
-	Person       *models.Person `json:"person"`
+	User         *models.Person `json:"user"`
 	AccessToken  string         `json:"access_token"`
 	RefreshToken string         `json:"refresh_token"`
 	ExpiresIn    int            `json:"expires_in"`
